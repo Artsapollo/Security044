@@ -2,9 +2,13 @@ import io.jsonwebtoken.Claims;
 import jwt.TokenService;
 import rsaEncodeDecode.EncDec;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 public class Main {
     private final static String ENCODED_TEXT = "";
-
 
 
     public static void encryptDecrypt(String plainText) {
@@ -33,9 +37,26 @@ public class Main {
 
     public static void main(String[] args) {
 //        Main.encryptDecrypt("Hello World!");
-        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L);
+        KeyPair keyPair = null;
 
-        Claims claims = TokenService.decodeJWT(jwt);
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            keyPair = kpg.generateKeyPair();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        PublicKey aPublic = keyPair.getPublic();
+        PrivateKey aPrivate = keyPair.getPrivate();
+        System.out.println("Public key: " + EncDec.keyToNumber(aPublic.getEncoded()).toString());
+        System.out.println("Private key: " + EncDec.keyToNumber(aPrivate.getEncoded()).toString() + "\n");
+
+
+        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L, aPrivate);
+        System.out.println("Created JWT: \n" + jwt + "\n");
+
+        Claims claims = TokenService.confirmSignatureJWT(jwt, aPublic);
         System.out.println("Claims: " + claims);
     }
 

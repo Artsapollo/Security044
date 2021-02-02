@@ -7,9 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -41,24 +39,24 @@ public class TokenService {
      * Uses the fluent API to add the claims and sign the JWT
      * Sets the expiration date
      */
-    public static String createJWT(String id, String issuer, String subject, long ttlMillis) {
+    public static String createJWT(String id, String issuer, String subject, long ttlMillis, PrivateKey aPrivate ) {
 
         //The JWT signature algorithm we will be using to sign the token
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-
-        long nowMillis = System.currentTimeMillis();
-        Date now = new Date(nowMillis);
-
         //We will sign our JWT with our ApiKey secret
         byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(SECRET_KEY);
         Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
 
+        long nowMillis = System.currentTimeMillis();
+
         //Let's set the JWT Claims
-        JwtBuilder builder = Jwts.builder().setId(id)
-                .setIssuedAt(now)
+        JwtBuilder builder = Jwts.builder()
+                .setHeaderParam("kid", "myKeyId")
+                .setId(id)
+                .setIssuedAt(new Date(nowMillis))
                 .setSubject(subject)
                 .setIssuer(issuer)
-                .signWith(signingKey, signatureAlgorithm);
+                .signWith(aPrivate);
 
         //if it has been specified, let's add the expiration
         if (ttlMillis > 0) {
@@ -71,12 +69,19 @@ public class TokenService {
         return builder.compact();
     }
 
-    public static Claims decodeJWT(String jwt) {
+    public static Claims confirmSignatureJWT(String jwt, PublicKey aPublic) {
         //This line will throw an exception if it is not a signed JWS (as expected)
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
-                .build()
-                .parseClaimsJws(jwt).getBody();
+        Claims claims = null;
+        String plainText = null;
+        try {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(aPublic)
+                    .build()
+                    .parseClaimsJws(jwt)
+                    .getBody();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return claims;
     }
 
