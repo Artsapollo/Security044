@@ -1,6 +1,11 @@
+import io.jsonwebtoken.Claims;
+import jwt.TokenService;
 import rsaEncodeDecode.EncDec;
 
 public class Main {
+    private final static String ENCODED_TEXT = "";
+
+
 
     public static void encryptDecrypt(String plainText) {
         EncDec encDec = new EncDec();
@@ -27,6 +32,11 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Main.encryptDecrypt("Hello World!");
+//        Main.encryptDecrypt("Hello World!");
+        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L);
+
+        Claims claims = TokenService.decodeJWT(jwt);
+        System.out.println("Claims: " + claims);
     }
+
 }
