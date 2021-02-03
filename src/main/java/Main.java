@@ -6,8 +6,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static jwt.TokenService.encryptDecryptJwe;
-import static jwt.TokenService.generateKeyPair;
+import static jwt.TokenService.*;
 
 public class Main {
     private final static String ENCODED_TEXT = "";
@@ -19,7 +18,8 @@ public class Main {
     }
 
     public static void jweShowOff() {
-        encryptDecryptJwe();
+//        encryptDecryptJwe();
+        workaroundJwsJwe();
     }
 
     public static void jwsShowOff() {

@@ -4,6 +4,7 @@ import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
@@ -231,6 +232,47 @@ public class TokenService {
 //        The sender signs the JWT with their private key and then encrypts to the recipient:
 
         // Create JWT
+        SignedJWT signedJWT = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(senderJWK.getKeyID()).build(),
+                new JWTClaimsSet.Builder()
+                        .subject("Artsapollo")
+                        .issueTime(new Date())
+                        .issuer("www.pravda.ua")
+                        .build());
+        try {
+
+            //Sign the JWT
+            signedJWT.sign(new RSASSASigner(senderJWK));
+
+            // Create JWE object with signed JWT as payload
+            JWEObject jweObject = new JWEObject(
+                    new JWEHeader.Builder(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM)
+                            .contentType("JWT")
+                            .build(),
+                    new Payload(signedJWT));
+
+
+            jweObject.encrypt(new RSAEncrypter(recipientPublicJWK));
+
+            String jweString = jweObject.serialize();
+
+            System.out.println("Created JWE: " + jweString);
+
+            // Parse the JWE string
+            JWEObject jweObject1 = JWEObject.parse(jweString);
+            // Decrypt with private key
+            jweObject1.decrypt(new RSADecrypter(recipientJWK));
+            // Extract payload
+            SignedJWT signedJWT1 = jweObject1.getPayload().toSignedJWT();
+            System.out.println("Extracted payload: " + signedJWT1);
+
+            boolean verify = signedJWT1.verify(new RSASSAVerifier(senderPublicJWK));
+            System.out.println("Is signature verified: " + verify);
+
+            System.out.println("Extracted claimsSet: " + signedJWT1.getJWTClaimsSet());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 }
