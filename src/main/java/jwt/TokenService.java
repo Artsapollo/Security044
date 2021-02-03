@@ -1,12 +1,15 @@
 package jwt;
 
-import com.nimbusds.jose.EncryptionMethod;
-import com.nimbusds.jose.JWEAlgorithm;
-import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSAEncrypter;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -178,6 +181,56 @@ public class TokenService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static RSAKey generateSenderRsaKeys() {
+        try {
+            return new RSAKeyGenerator(2048)
+                    .keyID("123")
+                    .keyUse(KeyUse.SIGNATURE)
+                    .generate().toRSAKey();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static RSAKey generateRecipientRsaKeys() {
+        try {
+            return new RSAKeyGenerator(2048)
+                    .keyID("456")
+                    .keyUse(KeyUse.ENCRYPTION)
+                    .generate().toRSAKey();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void workaroundJwsJwe() {
+//        KeyPair keyPairSender = generateKeyPair();
+//
+//        RSAPublicKey sendPub = (RSAPublicKey) keyPairSender.getPublic();
+//        RSAPrivateKey sendPrv = (RSAPrivateKey) keyPairSender.getPrivate();
+//
+//        KeyPair keyPairIssuer = generateKeyPair();
+//
+//        RSAPublicKey issPub = (RSAPublicKey) keyPairIssuer.getPublic();
+//        RSAPrivateKey issPrv = (RSAPrivateKey) keyPairIssuer.getPrivate();
+//
+//        RSAKey sendRsaPub = new RSAKey.Builder(sendPub).build();
+
+        //Generate sender RSA key pair, make public key available to recipient
+        RSAKey senderJWK = generateSenderRsaKeys();
+        RSAKey senderPublicJWK = senderJWK.toPublicJWK();
+
+        //Generate recipient RSA key pair, make public key available to sender:
+        RSAKey recipientJWK = generateRecipientRsaKeys();
+        RSAKey recipientPublicJWK = recipientJWK.toPublicJWK();
+
+//        The sender signs the JWT with their private key and then encrypts to the recipient:
+
+        // Create JWT
 
     }
 }
