@@ -8,12 +8,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.security.*;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.Date;
-import java.util.Optional;
 
 public class TokenService {
 
@@ -31,6 +26,17 @@ public class TokenService {
     private static final String SECRET_KEY = "Brace yourself, I'll take you on a trip down memory lane " +
             "This is not a rap on how I'm slingin' crack or move cocaine This is cul-de-sac and plenty Cognac and major pain";
 
+    public static KeyPair generateKeyPair() {
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            return kpg.generateKeyPair();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * createJWT() method does the following:
      * Sets the hashing algorithm
@@ -39,7 +45,7 @@ public class TokenService {
      * Uses the fluent API to add the claims and sign the JWT
      * Sets the expiration date
      */
-    public static String createJWT(String id, String issuer, String subject, long ttlMillis, PrivateKey aPrivate ) {
+    public static String createJWT(String id, String issuer, String subject, long ttlMillis, PrivateKey aPrivate) {
 
         //The JWT signature algorithm we will be using to sign the token
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
@@ -79,7 +85,7 @@ public class TokenService {
                     .build()
                     .parseClaimsJws(jwt)
                     .getBody();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return claims;

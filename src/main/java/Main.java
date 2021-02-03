@@ -3,13 +3,38 @@ import jwt.TokenService;
 import rsaEncodeDecode.EncDec;
 
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+
+import static jwt.TokenService.generateKeyPair;
 
 public class Main {
     private final static String ENCODED_TEXT = "";
 
+    public static void main(String[] args) {
+//        Main.encryptDecrypt("Hello World!");
+        Main.jwsShowOff();
+    }
+
+    public static void jweShowOff() {
+
+    }
+
+    public static void jwsShowOff() {
+        KeyPair keyPair = generateKeyPair();
+
+        PublicKey aPublic = keyPair.getPublic();
+        PrivateKey aPrivate = keyPair.getPrivate();
+        System.out.println("Public key: " + EncDec.keyToNumber(aPublic.getEncoded()).toString());
+        System.out.println("Private key: " + EncDec.keyToNumber(aPrivate.getEncoded()).toString() + "\n");
+
+
+        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L, aPrivate);
+        System.out.println("Created JWT: " + jwt + "\n");
+
+        Claims claims = TokenService.confirmSignatureJWT(jwt, aPublic);
+        System.out.println("Confirmed JWT Claims: " + claims);
+    }
 
     public static void encryptDecrypt(String plainText) {
         EncDec encDec = new EncDec();
@@ -34,30 +59,4 @@ public class Main {
         System.out.println("Decrypted text: " + decryptedText);
         System.out.println("Decrypted text length: " + decryptedText.length());
     }
-
-    public static void main(String[] args) {
-//        Main.encryptDecrypt("Hello World!");
-        KeyPair keyPair = null;
-
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            keyPair = kpg.generateKeyPair();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        PublicKey aPublic = keyPair.getPublic();
-        PrivateKey aPrivate = keyPair.getPrivate();
-        System.out.println("Public key: " + EncDec.keyToNumber(aPublic.getEncoded()).toString());
-        System.out.println("Private key: " + EncDec.keyToNumber(aPrivate.getEncoded()).toString() + "\n");
-
-
-        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L, aPrivate);
-        System.out.println("Created JWT: \n" + jwt + "\n");
-
-        Claims claims = TokenService.confirmSignatureJWT(jwt, aPublic);
-        System.out.println("Claims: " + claims);
-    }
-
 }
