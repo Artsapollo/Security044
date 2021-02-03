@@ -1,5 +1,12 @@
 package jwt;
 
+import com.nimbusds.jose.EncryptionMethod;
+import com.nimbusds.jose.JWEAlgorithm;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.crypto.RSADecrypter;
+import com.nimbusds.jose.crypto.RSAEncrypter;
+import com.nimbusds.jwt.EncryptedJWT;
+import com.nimbusds.jwt.JWTClaimsSet;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -8,7 +15,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.UUID;
 
 public class TokenService {
 
@@ -17,7 +28,7 @@ public class TokenService {
      */
 
     //uses my public key to verify signature.
-    private final static String PUB_KEY = "";
+    private final static String PUB_KEY = "eyJraWQiOiJ5cHlseXBlbiIsImN0eSI6IkpXRSIsInR5cCI6IkpPU0UiLCJhbGciOiJQUzI1NiJ9.ZXlKMGVYQWlPaUpLVDFORklpd2laVzVqSWpvaVFUSTFOa2REVFNJc0ltbGhkQ0k2TVRVMk16STJOVE01TUN3aVlXeG5Jam9pVWxOQkxVOUJSVkF0TWpVMklpd2lhMmxrSWpvaVdVOVZVbDlLVjBWZlMwVlpYMGxFSW4wLmpvNzlrOUNLTXRyV3Z4bE1SekpYSlZzUVFtR2VDWnc4WFhBd0p1eDVkMkUwNkhHVHFsMXN6M3pVVUtpLXNBWUJRNENudGs2S1hZR0ZkaXdpR1YwMTkzV3ZaaEpEdVU5MHBWdlFMSk1sOHVCWjdFZGc3aWxMbnFZRWNPSG11SmVERVhZVmxpaHhqemRJc3B5ek1XUmtVMXlfc2dUYjJ5NXg2dFItTXZqbjhMVFpQUWxmaS1JaXNnUDRqVXFmLUpkLWhnZ2JRLUN3OGhrNTdEZk9FbnY1VkswcDllc3IteDFXSWRzYmdEUlRyVXZodlEzWWJ2ZDVJLWxkZmNocmUwNTJ2OVRtRFJ1R0lvSHZzejBBLXJCTmxuMGd1TVdyd1lVSzFxWWVjRXpydTZWSVFNSUNYdXZaZ2diczBnSEh1TTE2TFJIdGp1RlJQRUxLR1UtZ2VJY2dNZy5lQUk3bHBwbWFJaDVtWERkLnlkM2Z6R3JLZU5pdWd0ZEhCUHhmaTRDWk5LLXZKUXNrdFhqaUh0ZDlRX0FENDU1M29NQlR1cjZsZFhWSGRLcXZUdUlaVWJMSkxRWDcxNFBVTmNKbDcyU1kxNy1tT0x0MXhxM0RvLWdaU0Y0Q1hTLVlDaWNQcEwzcXRBdUx0UzNSd2ZrNUhIRF81U1VZeWowN3lybG4zdV9EUHU0cWRFdzZCdHlKUHFROGZtYmV6MlpXU2hqR2JOS1QuWm5kUlNaei1sUVBGSkp0by1pbmxLdw.rBvBbuNiDhRaSMw7MpF1EDPybJseOSSvmitDviFvOZ9_PH_yh7ze6gYhA6-JDR6ubMpPCTf3CbKFDw1dqaO3BY1JoWVXXzqkXdjWr7jE5fSaJU5M-47Zn0VJh7aq-P4rkOFyyUBizKTcj5k0DD8WOYVGDvVYOt2lfbh6Ky3gNkF1a-swIWZaKZl-zywR46BkmriG0IbNij0KY3sdU21UT0Wbo-kiFFREOYeu4zNDSRGorQAvCijQkPY4Moto7AQaBZxmGLIk5HfXvliu7Mj6JQPhNjfltUgl-NEag2iN0ajDcyj9z49U0VQfwjVg2AE4VJV-St_kGZ1WpJTyYVlYkQ";
 
     //use my private key to decrypt data
     private final static String PRIVATE_KEY = "";
@@ -91,5 +102,82 @@ public class TokenService {
         return claims;
     }
 
+    public static void encryptDecryptJwe() {
+        KeyPair keyPair = generateKeyPair();
 
+        RSAPublicKey rsaPublicKey = null;
+        RSAPrivateKey rsaPrivateKey = null;
+        try {
+            rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
+            rsaPrivateKey = (RSAPrivateKey) keyPair.getPrivate();
+
+            //generate public key from private key
+//            RSAPrivateCrtKey privk = (RSAPrivateCrtKey) privateKey;
+//            RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
+//            rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(publicKeySpec);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        // Compose the JWT claims set
+        Date now = new Date();
+
+        JWTClaimsSet jwtClaims = new JWTClaimsSet.Builder()
+                .issuer("https://openid.net")
+                .subject("alice")
+                .audience(Arrays.asList("https://app-one.com", "https://app-two.com"))
+                .expirationTime(new Date(now.getTime() + 1000 * 60 * 10)) // expires in 10 minutes
+                .notBeforeTime(now)
+                .issueTime(now)
+                .jwtID(UUID.randomUUID().toString())
+                .build();
+
+
+        System.out.println("JwtClaims: " + jwtClaims.toJSONObject() + "\n");
+
+        // Request JWT encrypted with RSA-OAEP-256 and 128-bit AES/GCM
+        JWEHeader header = new JWEHeader(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A128GCM);
+
+        // Create the encrypted JWT object
+        EncryptedJWT jwt = new EncryptedJWT(header, jwtClaims);
+
+
+        // Create an encrypter with the specified public RSA key
+        RSAEncrypter encrypter = new RSAEncrypter(rsaPublicKey);
+        try {
+            jwt.encrypt(encrypter);
+
+            String jwtString = jwt.serialize();
+            System.out.println("Jwt encrypted string: " + jwtString + "\n");
+
+//            String[] split = jwtString.split("\\.");
+//            System.out.println("JWT compact form: \n");
+//            for(String part : split){
+//                System.out.println(part);
+//            }
+//            System.out.println();
+
+            jwt = EncryptedJWT.parse(jwtString);
+
+            RSADecrypter decrypter = new RSADecrypter(rsaPrivateKey);
+
+            jwt.decrypt(decrypter);
+
+            // Retrieve JWT claims
+            System.out.println("JWT CLAIMS: \n");
+            System.out.println(jwt.getJWTClaimsSet().getIssuer());
+            System.out.println(jwt.getJWTClaimsSet().getSubject());
+            System.out.println(jwt.getJWTClaimsSet().getAudience());
+            System.out.println(jwt.getJWTClaimsSet().getExpirationTime());
+            System.out.println(jwt.getJWTClaimsSet().getNotBeforeTime());
+            System.out.println(jwt.getJWTClaimsSet().getIssueTime());
+            System.out.println(jwt.getJWTClaimsSet().getJWTID());
+            System.out.println("");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 }

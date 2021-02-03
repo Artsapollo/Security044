@@ -6,6 +6,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import static jwt.TokenService.encryptDecryptJwe;
 import static jwt.TokenService.generateKeyPair;
 
 public class Main {
@@ -13,11 +14,12 @@ public class Main {
 
     public static void main(String[] args) {
 //        Main.encryptDecrypt("Hello World!");
-        Main.jwsShowOff();
+//        Main.jwsShowOff();
+        Main.jweShowOff();
     }
 
     public static void jweShowOff() {
-
+        encryptDecryptJwe();
     }
 
     public static void jwsShowOff() {
