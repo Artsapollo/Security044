@@ -1,12 +1,13 @@
 import io.jsonwebtoken.Claims;
+import jjwt.TokenWorkaround;
 import jwt.TokenService;
 import rsaEncodeDecode.EncDec;
+import util.KeyUtils;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static jwt.TokenService.*;
 
 public class Main {
     private final static String ENCODED_TEXT = "";
@@ -14,16 +15,11 @@ public class Main {
     public static void main(String[] args) {
 //        Main.encryptDecrypt("Hello World!");
 //        Main.jwsShowOff();
-        Main.jweShowOff();
-    }
-
-    public static void jweShowOff() {
-//        encryptDecryptJwe();
-        workaroundJwsJwe();
+        TokenService.createFullJwt();
     }
 
     public static void jwsShowOff() {
-        KeyPair keyPair = generateKeyPair();
+        KeyPair keyPair = KeyUtils.generateKeyPair();
 
         PublicKey aPublic = keyPair.getPublic();
         PrivateKey aPrivate = keyPair.getPrivate();
@@ -31,10 +27,10 @@ public class Main {
         System.out.println("Private key: " + EncDec.keyToNumber(aPrivate.getEncoded()).toString() + "\n");
 
 
-        String jwt = TokenService.createJWT("Id", "Artsapollo", "Subject", 100000L, aPrivate);
+        String jwt = TokenWorkaround.createJWT("Id", "Artsapollo", "Subject", 100000L, aPrivate);
         System.out.println("Created JWT: " + jwt + "\n");
 
-        Claims claims = TokenService.confirmSignatureJWT(jwt, aPublic);
+        Claims claims = TokenWorkaround.confirmSignatureJWT(jwt, aPublic);
         System.out.println("Confirmed JWT Claims: " + claims);
     }
 
