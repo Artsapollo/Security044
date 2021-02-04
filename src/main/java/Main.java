@@ -34,7 +34,7 @@ public class Main {
         System.out.println("Confirmed JWT Claims: " + claims);
     }
 
-    public static void encryptDecrypt(String plainText) {
+    public static void rsaEncryptDecrypt(String plainText) {
         EncDec encDec = new EncDec();
 
         System.out.println("PlainText: " + plainText);

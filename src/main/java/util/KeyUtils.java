@@ -4,8 +4,11 @@ import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 public class KeyUtils {
     public static KeyPair generateKeyPair() {
@@ -29,5 +32,17 @@ public class KeyUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void extractKeyFromString(String publicK) {
+        try {
+            byte[] publicBytes = Base64.getDecoder().decode(publicK);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+//            PublicKey pubKey = keyFactory.generatePublic(keySpec);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -34,44 +34,51 @@ public class TokenService {
 
     /**
      * Full lifecycle JWS+JWE
+     * INPUT:  requestData, senderPrivateJWK, receiverPublicJWK
      */
     public static void createFullJwt() {
         //SIGN AND ENCRYPTION
 
+                   //Отправитель
         //Generate sender RSA key pair, make public key available to recipient
-        RSAKey senderJWK = KeyUtils.generateRsaKeys("123", KeyUse.SIGNATURE);     //Using to create JWT and sign it
-        RSAKey senderPublicJWK = senderJWK.toPublicJWK(); //Using to checkSignature
+        RSAKey senderPrivateJWK = KeyUtils.generateRsaKeys("123", KeyUse.SIGNATURE);     //Using to create JWT and sign it
+        RSAKey senderPublicJWK = senderPrivateJWK.toPublicJWK(); //Using to checkSignature
 
+                   //Получатель
         //Generate recipient RSA key pair, make public key available to sender:
-        RSAKey recipientJWK = KeyUtils.generateRsaKeys("456", KeyUse.ENCRYPTION); //Using to decrypt Jwe
-        RSAKey recipientPublicJWK = recipientJWK.toPublicJWK(); //Using to encrypt Jwe
+        RSAKey receiverPrivateJWK = KeyUtils.generateRsaKeys("456", KeyUse.ENCRYPTION); //Using to decrypt Jwe
+        RSAKey receiverPublicJWK = receiverPrivateJWK.toPublicJWK(); //Using to encrypt Jwe
 
 //        The sender signs the JWT with their private key and then encrypts to the recipient:
 
         // Create JWT
-        SignedJWT signedJWT = createJwt(senderJWK);
-
+        SignedJWT signedJWT = createJwt(senderPrivateJWK);
         //Sign the JWT
-        signJwt(signedJWT, senderJWK);
+        signJwt(signedJWT, senderPrivateJWK); //JWS
 
         // Create JWE object with signed JWT as payload
         JWEObject jweObject = createJweWithJwt(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM, "JWT", signedJWT);
 
         //Encrypt the JWT
-        encryptJwe(jweObject, recipientPublicJWK);
+        encryptJwe(jweObject, receiverPublicJWK); //JWE
 
         String jweString = jweObject.serialize();
         System.out.println("Created JWE: " + jweString);
 
-        readJwt(jweString, recipientJWK, senderPublicJWK);
+        //Decrypt
+        readJwt(jweString, receiverPrivateJWK, senderPublicJWK);
 
     }
 
-    public static void readJwt(String jweString, RSAKey recipientJWK, RSAKey senderPublicJWK) {
+    /**
+     * Decrypt JWT lifecycle
+     * INPUT: jweString, receiverPrivateJWK, senderPublicJWK
+     */
+    public static void readJwt(String jweString, RSAKey receiverPrivateJWK, RSAKey senderPublicJWK) {
         //DECRYPTION
-        SignedJWT signedJWT1 = decryptJwt(jweString, recipientJWK);
+        SignedJWT signedJWT1 = decryptJwt(jweString, receiverPrivateJWK); //JWE
         // Verify the signature
-        boolean verify = checkJwtSignature(signedJWT1, senderPublicJWK);
+        boolean verify = checkJwtSignature(signedJWT1, senderPublicJWK); //JWS
         System.out.println("Is signature verified: " + verify + "\n");
 
         try {
