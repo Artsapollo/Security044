@@ -25,8 +25,8 @@ public class KeyUtils {
     public static RSAKey generateRsaKeys(String kid, KeyUse keyUse) {
         try {
             return new RSAKeyGenerator(2048)
-                    .keyID("456")
-                    .keyUse(KeyUse.ENCRYPTION)
+                    .keyID(kid)
+                    .keyUse(keyUse)
                     .generate().toRSAKey();
         } catch (Exception e) {
             e.printStackTrace();
@@ -45,4 +45,5 @@ public class KeyUtils {
             e.printStackTrace();
         }
     }
+
 }

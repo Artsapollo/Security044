@@ -1,3 +1,5 @@
+import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.jwk.RSAKey;
 import io.jsonwebtoken.Claims;
 import jjwt.TokenWorkaround;
 import jwt.TokenService;
@@ -32,6 +34,11 @@ public class Main {
 
         Claims claims = TokenWorkaround.confirmSignatureJWT(jwt, aPublic);
         System.out.println("Confirmed JWT Claims: " + claims);
+    }
+
+    public static void generateKeys(String kid, KeyUse keyUse){
+        RSAKey privateJWK = KeyUtils.generateRsaKeys(kid, keyUse);
+        RSAKey publicJWK = privateJWK.toPublicJWK();
     }
 
     public static void rsaEncryptDecrypt(String plainText) {

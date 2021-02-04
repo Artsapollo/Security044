@@ -1,4 +1,6 @@
+.classpath
+.project
+.settings/
 .idea/
-logs/
 target/
-security044.iml
+*.iml
