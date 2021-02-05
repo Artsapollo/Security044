@@ -18,6 +18,7 @@ public class Main {
 //        Main.encryptDecrypt("Hello World!");
 //        Main.jwsShowOff();
         TokenService.createFullJwt();
+//        Main.generateKeys("123", KeyUse.SIGNATURE);
     }
 
     public static void jwsShowOff() {
@@ -38,7 +39,9 @@ public class Main {
 
     public static void generateKeys(String kid, KeyUse keyUse){
         RSAKey privateJWK = KeyUtils.generateRsaKeys(kid, keyUse);
+        System.out.println("Private Key : " + privateJWK.toJSONString());
         RSAKey publicJWK = privateJWK.toPublicJWK();
+
     }
 
     public static void rsaEncryptDecrypt(String plainText) {

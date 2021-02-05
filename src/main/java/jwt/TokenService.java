@@ -52,7 +52,7 @@ public class TokenService {
 //        The sender signs the JWT with their private key and then encrypts to the recipient:
 
         // Create JWT
-        SignedJWT signedJWT = createJwt(senderPrivateJWK);
+        SignedJWT signedJWT = createJwt(senderPrivateJWK); //тут просто достаются засеченные данные из ключа
         //Sign the JWT
         signJwt(signedJWT, senderPrivateJWK); //JWS
 
@@ -66,7 +66,7 @@ public class TokenService {
         System.out.println("Created JWE: " + jweString);
 
         //Decrypt
-        readJwt(jweString, receiverPrivateJWK, senderPublicJWK);
+//        readJwt(jweString, receiverPrivateJWK, senderPublicJWK);
 
     }
 
