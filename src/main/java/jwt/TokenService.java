@@ -7,9 +7,11 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import jdk.nashorn.internal.runtime.ECMAException;
 import util.KeyUtils;
 
 import java.security.KeyPair;
@@ -17,6 +19,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
@@ -39,12 +42,12 @@ public class TokenService {
     public static void createFullJwt() {
         //SIGN AND ENCRYPTION
 
-                   //Отправитель
+        //Отправитель
         //Generate sender RSA key pair, make public key available to recipient
         RSAKey senderPrivateJWK = KeyUtils.generateRsaKeys("123", KeyUse.SIGNATURE);     //Using to create JWT and sign it
         RSAKey senderPublicJWK = senderPrivateJWK.toPublicJWK(); //Using to checkSignature
 
-                   //Получатель
+        //Получатель
         //Generate recipient RSA key pair, make public key available to sender:
         RSAKey receiverPrivateJWK = KeyUtils.generateRsaKeys("456", KeyUse.ENCRYPTION); //Using to decrypt Jwe
         RSAKey receiverPublicJWK = receiverPrivateJWK.toPublicJWK(); //Using to encrypt Jwe
@@ -58,15 +61,14 @@ public class TokenService {
 
         // Create JWE object with signed JWT as payload
         JWEObject jweObject = createJweWithJwt(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM, "JWT", signedJWT);
-
         //Encrypt the JWT
         encryptJwe(jweObject, receiverPublicJWK); //JWE
 
-        String jweString = jweObject.serialize();
-        System.out.println("Created JWE: " + jweString);
+        String token = jweObject.serialize();
+        System.out.println("Created JWE: " + token);
 
         //Decrypt
-//        readJwt(jweString, receiverPrivateJWK, senderPublicJWK);
+        readJwt(token, receiverPrivateJWK, senderPublicJWK);
 
     }
 
@@ -74,15 +76,15 @@ public class TokenService {
      * Decrypt JWT lifecycle
      * INPUT: jweString, receiverPrivateJWK, senderPublicJWK
      */
-    public static void readJwt(String jweString, RSAKey receiverPrivateJWK, RSAKey senderPublicJWK) {
+    public static void readJwt(String token, RSAKey receiverPrivateJWK, RSAKey senderPublicJWK) {
         //DECRYPTION
-        SignedJWT signedJWT1 = decryptJwt(jweString, receiverPrivateJWK); //JWE
+        SignedJWT signedJWT = decryptJwt(token, receiverPrivateJWK); //JWE
         // Verify the signature
-        boolean verify = checkJwtSignature(signedJWT1, senderPublicJWK); //JWS
+        boolean verify = checkJwtSignature(signedJWT, senderPublicJWK); //JWS
         System.out.println("Is signature verified: " + verify + "\n");
 
         try {
-            System.out.println("Decrypted signed jwt: " + signedJWT1.getJWTClaimsSet() + "\n");
+            System.out.println("Decrypted signed jwt: " + signedJWT.getJWTClaimsSet() + "\n");
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -99,9 +101,9 @@ public class TokenService {
                         .build());
     }
 
-    public static void signJwt(SignedJWT signedJWT, RSAKey senderJWK) {
+    public static void signJwt(SignedJWT signedJWT, RSAKey senderPrivateJWK) {
         try {
-            signedJWT.sign(new RSASSASigner(senderJWK));
+            signedJWT.sign(new RSASSASigner(senderPrivateJWK));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -124,18 +126,18 @@ public class TokenService {
     }
 
 
-    public static SignedJWT decryptJwt(String jweString, RSAKey recipientJWK) {
+    public static SignedJWT decryptJwt(String token, RSAKey recipientPrivateJWK) {
         SignedJWT signedJWT = null;
 
         try {
             // Parse the JWE string
-            JWEObject jweObject1 = JWEObject.parse(jweString);
+            JWEObject jweObject = JWEObject.parse(token);
 
             // Decrypt with private key
-            jweObject1.decrypt(new RSADecrypter(recipientJWK));
+            jweObject.decrypt(new RSADecrypter(recipientPrivateJWK));
 
             // Extract payload
-            signedJWT = jweObject1.getPayload().toSignedJWT();
+            signedJWT = jweObject.getPayload().toSignedJWT();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -155,66 +157,50 @@ public class TokenService {
 
     /**
      * JSON Web Token (JWT) with RSA encryption
+     * THIS IS WHAT WE NEED
      */
     public static void encryptDecryptJwe() {
-        KeyPair keyPair = KeyUtils.generateKeyPair();
-
-        RSAPublicKey rsaPublicKey = null;
-        RSAPrivateKey rsaPrivateKey = null;
         try {
-            rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
-            rsaPrivateKey = (RSAPrivateKey) keyPair.getPrivate();
+            KeyPair keyPair = KeyUtils.generateKeyPair();
 
-            //generate public key from private key
-//            RSAPrivateCrtKey privk = (RSAPrivateCrtKey) privateKey;
-//            RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
-//            rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(publicKeySpec);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
+            RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) keyPair.getPrivate();
 
 
-        // Compose the JWT claims set
-        Date now = new Date();
+            // Compose the JWT claims set
+            Date now = new Date();
 
-        JWTClaimsSet jwtClaims = new JWTClaimsSet.Builder()
-                .issuer("https://openid.net")
-                .subject("alice")
-                .audience(Arrays.asList("https://app-one.com", "https://app-two.com"))
-                .expirationTime(new Date(now.getTime() + 1000 * 60 * 10)) // expires in 10 minutes
-                .notBeforeTime(now)
-                .issueTime(now)
-                .jwtID(UUID.randomUUID().toString())
-                .build();
-
-
-        System.out.println("JwtClaims: " + jwtClaims.toJSONObject() + "\n");
-
-        // Request JWT encrypted with RSA-OAEP-256 and 128-bit AES/GCM
-        JWEHeader header = new JWEHeader(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A128GCM);
-
-        // Create the encrypted JWT object
-        EncryptedJWT jwt = new EncryptedJWT(header, jwtClaims);
+            JWTClaimsSet jwtClaims = new JWTClaimsSet.Builder()
+                    .issuer("https://openid.net")
+                    .subject("alice")
+                    .audience(Arrays.asList("https://app-one.com", "https://app-two.com"))
+                    .expirationTime(new Date(now.getTime() + 1000 * 60 * 10)) // expires in 10 minutes
+                    .notBeforeTime(now)
+                    .issueTime(now)
+                    .jwtID(UUID.randomUUID().toString())
+                    .build();
 
 
-        // Create an encrypter with the specified public RSA key
-        RSAEncrypter encrypter = new RSAEncrypter(rsaPublicKey);
-        try {
+            System.out.println("JwtClaims: " + jwtClaims.toJSONObject() + "\n");
+
+            // Request JWT encrypted with RSA-OAEP-256 and 128-bit AES/GCM
+            JWEHeader header = new JWEHeader(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM);
+
+            // Create the encrypted JWT object
+            EncryptedJWT jwt = new EncryptedJWT(header, jwtClaims);
+
+
+            // Create an encrypter with the specified public RSA key
+            RSAEncrypter encrypter = new RSAEncrypter(rsaPublicKey);
+
             jwt.encrypt(encrypter);
 
             String jwtString = jwt.serialize();
-            System.out.println("Jwt encrypted string: " + jwtString + "\n");
-
-//            String[] split = jwtString.split("\\.");
-//            System.out.println("JWT compact form: \n");
-//            for(String part : split){
-//                System.out.println(part);
-//            }
-//            System.out.println();
+            System.out.println("Encrypted jwt string: " + jwtString + "\n");
 
             jwt = EncryptedJWT.parse(jwtString);
 
+            //Decrypt JWT
             RSADecrypter decrypter = new RSADecrypter(rsaPrivateKey);
 
             jwt.decrypt(decrypter);
@@ -231,6 +217,45 @@ public class TokenService {
             System.out.println("");
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static EncryptedJWT decryptInputJwe(String jwe, String privateKey) {
+        try {
+            System.out.println("Jwt encrypted string: " + jwe + "\n");
+            RSAPrivateKey rsaPrivateKey = RSAKey.parse(privateKey).toRSAPrivateKey();
+            System.out.println("RSAPrivateKey: " + rsaPrivateKey + "\n");
+
+            String[] split = jwe.split("\\.");
+
+            EncryptedJWT encryptedJWT = new EncryptedJWT(
+                    new Base64URL(split[0]),
+                    new Base64URL(split[1]),
+                    new Base64URL(split[2]),
+                    new Base64URL(split[3]),
+                    new Base64URL(split[4]));
+
+            //Decrypt JWT
+            RSADecrypter decrypter = new RSADecrypter(rsaPrivateKey);
+            encryptedJWT.decrypt(decrypter);
+
+            return encryptedJWT;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean isSignatureValid(String token, String publicKey) {
+        // Parse the JWS and verify its RSA signature
+        SignedJWT signedJWT;
+        try {
+            RSAPublicKey rsaPublicKey = RSAKey.parse(publicKey).toRSAPublicKey();
+            signedJWT = SignedJWT.parse(token);
+            JWSVerifier verifier = new RSASSAVerifier(rsaPublicKey);
+            return signedJWT.verify(verifier);
+        } catch (Exception e) {
+            return false;
         }
     }
 }

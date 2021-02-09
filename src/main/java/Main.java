@@ -1,5 +1,7 @@
-import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.JWEDecrypter;
+import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jwt.EncryptedJWT;
 import io.jsonwebtoken.Claims;
 import jjwt.TokenWorkaround;
 import jwt.TokenService;
@@ -10,16 +12,43 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import static util.KeyUtils.ENCODED_TEXT;
+import static util.KeyUtils.xCertificatePublicKeyExtractor;
+
 
 public class Main {
-    private final static String ENCODED_TEXT = "";
+
 
     public static void main(String[] args) {
 //        Main.encryptDecrypt("Hello World!");
 //        Main.jwsShowOff();
-        TokenService.createFullJwt();
+//        TokenService.createFullJwt();
 //        Main.generateKeys("123", KeyUse.SIGNATURE);
+//        Main.visaTestDecryption(KeyUtils.PUBLIC_KEY, KeyUtils.PRIVATE_KEY, ENCODED_TEXT);
+
+        EncryptedJWT encryptedJWT = TokenService.decryptInputJwe(ENCODED_TEXT, KeyUtils.PRIVATE_KEY);
+        boolean signatureValid = TokenService.isSignatureValid(encryptedJWT.serialize(), KeyUtils.PUBLIC_KEY);
+        System.out.println(signatureValid);
+
     }
+
+    public static void visaTestDecryption(String cert, String prvt, String encryptedJwt) {
+        RSAKey rsaPublicKey = xCertificatePublicKeyExtractor(cert);
+        System.out.println("Converted RSA public key: " + rsaPublicKey);
+        RSAKey rsaPrivateKey = xCertificatePublicKeyExtractor(cert);
+        System.out.println("Converted RSA private key: " + rsaPrivateKey);
+
+        System.out.println("Input JWT: " + encryptedJwt);
+
+
+//        JWEDecrypter decrypter = new RSADecrypter(rsaPrivateKey);
+
+
+//        //Decrypt
+        TokenService.readJwt(encryptedJwt, null, rsaPublicKey);
+
+    }
+
 
     public static void jwsShowOff() {
         KeyPair keyPair = KeyUtils.generateKeyPair();
@@ -37,12 +66,6 @@ public class Main {
         System.out.println("Confirmed JWT Claims: " + claims);
     }
 
-    public static void generateKeys(String kid, KeyUse keyUse){
-        RSAKey privateJWK = KeyUtils.generateRsaKeys(kid, keyUse);
-        System.out.println("Private Key : " + privateJWK.toJSONString());
-        RSAKey publicJWK = privateJWK.toPublicJWK();
-
-    }
 
     public static void rsaEncryptDecrypt(String plainText) {
         EncDec encDec = new EncDec();
