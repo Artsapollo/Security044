@@ -1,5 +1,6 @@
 package jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
@@ -7,7 +8,10 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.nimbusds.jwt.EncryptedJWT;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTClaimsSetTransformer;
 import com.nimbusds.jwt.SignedJWT;
+import jwt.dto.CardholderInformation;
 import util.KeyUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -19,6 +23,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 public class NimbusWorkflow {
     public static void main(String[] args) {
@@ -42,7 +47,18 @@ public class NimbusWorkflow {
             if (signatureValid) {
                 List<String> strings = decodeTokenParts(KeyUtils.ENCODED_TEXT);
                 EncryptedJWT encryptedJWT = NimbusWorkflow.decryptInputJwe(strings.get(1), privKey);
+                JWTClaimsSet jwtClaimsSet = encryptedJWT.getJWTClaimsSet();
+
+                String cardholderInfoString = jwtClaimsSet.getClaim("cardholderInfo").toString();
+                System.out.println(cardholderInfoString);
+
+
+                ObjectMapper mapper = new ObjectMapper();
+                CardholderInformation cardholderInformation = mapper.readValue(cardholderInfoString, CardholderInformation.class);
+                System.out.println(cardholderInformation);
+
             }
+
 
 
             System.out.println(signatureValid);
@@ -51,10 +67,14 @@ public class NimbusWorkflow {
         }
     }
 
+
+
+
+
     public static EncryptedJWT decryptInputJwe(String jwe, RSAPrivateKey privateKey) {
         try {
             System.out.println("Jwt encrypted string: " + jwe + "\n");
-            String[] split = jwe.split("\\.");
+            String[] split = jwe.split("\\.", 0);
 
             EncryptedJWT encryptedJWT = new EncryptedJWT(
                     new Base64URL(split[0]),
@@ -103,7 +123,6 @@ public class NimbusWorkflow {
         return extractRSAKeyFromString(cert);
     }
 
-    //TODO Определить что это за сраный токен из 3 часте и заэнкрипченный то
     public static List<String> decodeTokenParts(String token) {
         String[] parts = token.split("\\.", 0);
         List<String> decodedParts = new ArrayList<>();
