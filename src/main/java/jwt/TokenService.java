@@ -12,6 +12,7 @@ import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import jdk.nashorn.internal.runtime.ECMAException;
+import jwt.dto.TokenPayload;
 import util.KeyUtils;
 
 import java.security.KeyPair;
@@ -22,6 +23,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
+
+import static jwt.NimbusEncryptionWorkflow.*;
 
 /**
  * Nimbus JOSE + JWT
@@ -86,41 +89,6 @@ public class TokenService {
         try {
             System.out.println("Decrypted signed jwt: " + signedJWT.getJWTClaimsSet() + "\n");
         } catch (ParseException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public static SignedJWT createJwt(RSAKey senderJWK) {
-        return new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(senderJWK.getKeyID()).build(),
-                new JWTClaimsSet.Builder()
-                        .subject("Artsapollo")
-                        .issueTime(new Date())
-                        .issuer("www.pravda.ua")
-                        .build());
-    }
-
-    public static void signJwt(SignedJWT signedJWT, RSAKey senderPrivateJWK) {
-        try {
-            signedJWT.sign(new RSASSASigner(senderPrivateJWK));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static JWEObject createJweWithJwt(JWEAlgorithm jweAlgo, EncryptionMethod encryptMethod, String contentType, SignedJWT signedJWT) {
-        return new JWEObject(
-                new JWEHeader.Builder(jweAlgo, encryptMethod)
-                        .contentType(contentType)
-                        .build(),
-                new Payload(signedJWT));
-    }
-
-    public static void encryptJwe(JWEObject jweObject, RSAKey recipientPublicJWK) {
-        try {
-            jweObject.encrypt(new RSAEncrypter(recipientPublicJWK));
-        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -200,7 +168,7 @@ public class TokenService {
 
             jwt = EncryptedJWT.parse(jwtString);
 
-            //Decrypt JWT
+//            Decrypt JWT
             RSADecrypter decrypter = new RSADecrypter(rsaPrivateKey);
 
             jwt.decrypt(decrypter);

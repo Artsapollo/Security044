@@ -1,5 +1,3 @@
-import com.nimbusds.jose.JWEDecrypter;
-import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.EncryptedJWT;
 import io.jsonwebtoken.Claims;
@@ -12,7 +10,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static util.KeyUtils.ENCODED_TEXT;
+import static util.KeyUtils.Y_ENCODED_TEXT;
 import static util.KeyUtils.xCertificatePublicKeyExtractor;
 
 
@@ -26,8 +24,8 @@ public class Main {
 //        Main.generateKeys("123", KeyUse.SIGNATURE);
 //        Main.visaTestDecryption(KeyUtils.PUBLIC_KEY, KeyUtils.PRIVATE_KEY, ENCODED_TEXT);
 
-        EncryptedJWT encryptedJWT = TokenService.decryptInputJwe(ENCODED_TEXT, KeyUtils.PRIVATE_KEY);
-        boolean signatureValid = TokenService.isSignatureValid(encryptedJWT.serialize(), KeyUtils.PUBLIC_KEY);
+        EncryptedJWT encryptedJWT = TokenService.decryptInputJwe(Y_ENCODED_TEXT, KeyUtils.Y_PRIVATE_KEY);
+        boolean signatureValid = TokenService.isSignatureValid(encryptedJWT.serialize(), KeyUtils.Y_PUBLIC_KEY);
         System.out.println(signatureValid);
 
     }
